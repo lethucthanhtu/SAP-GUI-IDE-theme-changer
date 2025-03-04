@@ -9,7 +9,7 @@ try {
     $FILES = $themesList.themes
 } catch {
     Write-Host "Error: Could not retrieve themes list."
-    exit 1
+    exit 0
 }
 
 # Number of theme files
