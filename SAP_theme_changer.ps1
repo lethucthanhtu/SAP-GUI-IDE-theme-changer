@@ -17,7 +17,7 @@ $FILES_OFFSET = 1
 
 function Format-Name {
     param ($filePath)
-    return ($filePath -replace "_", " ")
+    return ($filePath -replace "_theme.xml", "" -replace "_", " ")
 }
 
 function Change-Theme {
