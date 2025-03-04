@@ -44,7 +44,7 @@ function Change-Theme {
 # Check if there are theme files
 if ($FILES_LENGTH -eq 0) {
     Write-Host "No theme XML file found."
-    exit 1
+    exit 0
 }
 
 # Main menu
