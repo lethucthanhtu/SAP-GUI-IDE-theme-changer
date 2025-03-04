@@ -1,12 +1,12 @@
 # Define paths
 $SOURCE_DIR = "$env:APPDATA\SAP\SAP GUI\ABAP Editor\abap_spec.xml"
-$THEMES_DIR = "./themes"
+$THEMES_DIR = "https://letu-sap.vercel.app/themes"
 $FILES_POSTFIX = "theme.xml"
 
 # Get theme files
 $FILES = Get-ChildItem -Path $THEMES_DIR -Filter "*$FILES_POSTFIX"
 $FILES_LENGTH = $FILES.Count
-$FILES_OFFSET = 3
+$FILES_OFFSET = 1
 
 # Function to format theme name
 function Format-Name {
@@ -68,8 +68,8 @@ if ($FILES_LENGTH -eq 0) {
 while ($true) {
     Write-Host "======================="
     Write-Host "[0] Exit program"
-    Write-Host "[1] Save current theme"
-    Write-Host "[2] Format theme names"
+    # Write-Host "[1] Save current theme"
+    # Write-Host "[2] Format theme names"
     Write-Host "-----------------------"
     Write-Host "Available themes:"
 
