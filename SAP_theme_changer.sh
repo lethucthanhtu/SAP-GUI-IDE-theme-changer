@@ -1,75 +1,150 @@
 #!/bin/bash
 
 # ABAP Theme directory
-lv_src="$APPDATA/SAP/SAP GUI/ABAP Editor/abap_spec.xml"
+SOURCE_DIR="$APPDATA/SAP/SAP GUI/ABAP Editor/abap_spec.xml"
+
+# Theme directory
+THEMES_DIR="./themes"
+
+# Files postfix
+FILES_POSTFIX="theme.xml"
 
 # File filter convention
-lv_theme_dir="./themes"
-lv_file=("$lv_theme_dir"/*_theme.xml)
+FILES=($THEMES_DIR/*$FILES_POSTFIX)
 
-# Check if there are matching lv_file
-if [ ${#lv_file[@]} -eq 0 ]; 
+# File length
+FILES_LENGTH=${#FILES[@]}
+
+# File offset
+FILES_OFFSET=3
+
+# Format theme name
+FORMAT_NAME () {
+    echo $(basename "$1" | sed "s/$FILES_POSTFIX//g" | tr '_' ' ')
+}
+
+# Format file name
+FORMAT_FILE () {
+    # Get the new filename with spaces replaced by underscores
+    local NEW_FILE=$(echo "$1" | tr ' ' '_')
+
+    # Rename the FILE if the new name is different
+    if [[ "$1" != "$NEW_FILE" ]];
+    then
+        mv "$1" "$NEW_FILE"
+    fi
+}
+
+# Format files
+FORMAT_FILES () {
+    for FILE in $THEMES_DIR/*;
+    do
+        FORMAT_FILE "$FILE"
+    done
+}
+
+CHANGE_THEME () {
+    # Overwrite theme
+    cp "$1" "$SOURCE_DIR"
+
+    # Check if `cp` succeeded
+    if [ $? -ne 0 ];
+    then
+        echo "Error: Change theme failed!"
+    else
+        echo "Change theme to "$(FORMAT_NAME "$SELECTED_FILE")" successfully!"
+        echo "Please restart SAP GUI for change to take effect."
+    fi
+}
+
+SAVE_THEME () {
+    # Default theme name
+    local THEME_NAME
+
+    read -p "Name your theme to save. Leave blank for 'previous_theme.xml': " THEME_NAME
+
+    # -z for checking empty string
+    if [ -z "$THEME_NAME" ];
+    then
+        THEME_NAME="previous"
+    fi
+
+    THEME_NAME=$(echo "$THEME_NAME $FILES_POSTFIX" | tr ' ' '_' )
+
+    # Copy current theme to themes directory
+    cp "$SOURCE_DIR" "$THEMES_DIR/$THEME_NAME"
+
+    # Check if `cp` succeeded
+    if [ $? -ne 0 ];
+    then
+        echo "Error: Save theme failed!"
+    else
+        echo "Save theme "$THEME_NAME" successfully!"
+    fi
+}
+
+# Format files
+FORMAT_FILES
+
+# Check if there are matching FILES
+if [ $((FILES_LENGTH)) == 0 ];
 then
     echo "No theme XML file found."
     exit 1
 fi
 
-# Display lv_file with a numeric index
-echo "================"
-echo "Available Themes:"
-
-for i in "${!lv_file[@]}"; 
-do
-    # Extract just the filename and remove "_theme.xml"
-    theme_name=$(basename "${lv_file[i]}" | sed 's/_theme.xml//g' | tr '_' ' ')
-    
-    echo "$((i+1)). $theme_name theme"
-done
-
-echo "----------------"
-echo "0. Exit program"
-echo "================"
-
 # Input validation loop
-lv_loop=true
-while $lv_loop;
+LOOP=true
+while $LOOP;
 do
-    read -p "Enter the number of the theme you want to select: " lv_choice
+    # Display FILES with a numeric index
+    echo "======================="
+    echo "[0] Exit program"
+    echo "[1] Save current theme"
+    echo "[2] Format theme names"
+    echo "-----------------------"
+    echo "Available themes:"
+
+    for i in ${!FILES[@]};
+    do
+        # Display formatted theme name
+        THEME_NAME=$(FORMAT_NAME "${FILES[$i]}")
+        echo "["$((i+$FILES_OFFSET))"] $THEME_NAME theme"
+    done
+
+    echo "======================="
+
+    read -p "Enter your option: " CHOICE
 
     # Validate input
-    if [[ $((lv_choice)) != $lv_choice ]] || [ "$lv_choice" -gt "${#lv_file[@]}" ] || [ "$lv_choice" -lt 0 ];
+    if  [[ $((CHOICE)) != $CHOICE ]] ||
+        [ $CHOICE -gt $((FILES_LENGTH + FILES_OFFSET)) ] ||
+        [ $CHOICE -lt 0 ];
     then
-	echo "Not a valid number"
+        clear
+        echo "Not a valid input. Please try again."
     else
-        lv_loop=false
+        LOOP=false
     fi
 done
 
-case $lv_choice in
+case $CHOICE in
     0)
         exit 1
         ;;
+    1)
+        SAVE_THEME
+        FORMAT_FILES
+        ;;
+    2)
+        FORMAT_FILES
+        echo "Format theme names successfully!"
+        ;;
     *)
-        lv_selected="${lv_file[$((lv_choice-1))]}"
-        echo $lv_selected 
+        SELECTED_FILE=${FILES[$((CHOICE-$FILES_OFFSET))]}
+        CHANGE_THEME "$SELECTED_FILE"
         ;;
 esac
-
-# TODO
-# Save previous theme
-# cp "$lv_src" "$lv_theme_dir/previous_theme.xml"
-
-# Override theme
-cp "$lv_selected" "$lv_src"
-
-# Check if `cp` succeeded
-if [ $? -ne 0 ]; 
-then
-    echo "Error: Change theme failed!"
-else
-    echo "Change theme to $lv_selected successfully!"
-    echo "Please restart SAP GUI for change to take effect."
-fi
 
 # Wait for user to exit
 read -p "Press any key to exit."
