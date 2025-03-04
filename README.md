@@ -4,7 +4,17 @@ A simple theme changer for SAP GUI's code editor
 
 ## Usage
 
-Run `SAP_theme_changer.sh` to change theme
+### IWR use
+
+```powershell
+iwr -useb https://letu-sap.vercel.app/SAP_theme_changer.ps1 | iex
+```
+
+The powershell script is made specific for invoke web request only, therefore, it won't have save and format feature
+
+### Local use
+
+Run `SAP_theme_changer.sh` or `SAP_theme_changer.bat` to change theme
 
 To add more theme:
 

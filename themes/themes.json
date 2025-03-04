@@ -1,0 +1,9 @@
+{
+  "themes": [
+    "default_theme.xml",
+    "dracula_theme.xml",
+    "modified_dracula_theme.xml",
+    "nord_theme.xml",
+    "one_dark_theme.xml"
+  ]
+}
