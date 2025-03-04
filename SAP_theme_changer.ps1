@@ -62,7 +62,7 @@ while ($true) {
 }
 
 switch ($choice) {
-    0 { exit 1 }
+    0 { exit 0 }  # Change exit code to 0 for a graceful exit
     default {
         $selectedFile = $FILES[$choice - $FILES_OFFSET]
         Change-Theme $selectedFile
