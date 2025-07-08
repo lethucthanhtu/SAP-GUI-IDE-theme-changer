@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://lttt.dev/SAP-GUI-IDE-theme-changer",
+      "permanent": true
+    }
+  ],
+  "routes": [{ "src": "/(.*\\.xml)", "dest": "/$1" }]
+}
