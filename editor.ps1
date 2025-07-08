@@ -1,84 +1,90 @@
-# Define paths
-$SOURCE_DIR = "$env:APPDATA\SAP\SAP GUI\ABAP Editor\abap_spec.xml"
-$THEMES_URL = "https://letu-sap.vercel.app/themes"
-$THEMES_JSON = "$THEMES_URL/themes.json"
+# Paths
+$SourceFile = "$env:APPDATA\SAP\SAP GUI\ABAP Editor\abap_spec.xml"
+$BackupFile = "$env:APPDATA\SAP\SAP GUI\ABAP Editor\abap_spec.previous_theme.xml"
+$ThemesUrl = "https://letu-sap.vercel.app/themes"
+$ThemesJson = "$ThemesUrl/themes.json"
 
-# Fetch themes list
+# Fetch available themes
 try {
-    $themesList = Invoke-RestMethod -Uri $THEMES_JSON
-    $FILES = $themesList.themes
+    $ThemesList = Invoke-RestMethod -Uri $ThemesJson
+    $Files = $ThemesList.themes
 } catch {
     Write-Host "Error: Could not retrieve themes list."
-    exit 0
+    exit 1
 }
 
-# Number of theme files
-$FILES_LENGTH = $FILES.Count
-
-# Offset for default option
-$FILES_OFFSET = 1
-
-# Format file name to display name
-function Format-Name {
-    param ($filePath)
-    return ($filePath -replace "_theme.xml", "" -replace "_", " ")
+# Function to format display name
+function Format-ThemeName {
+    param ($FileName)
+    return ($FileName -replace "_theme.xml", "" -replace "_", " ")
 }
 
-# Handle theme change
-function Change-Theme {
-    param ($selectedFile)
+# Backup current theme before changing
+function Backup-CurrentTheme {
+    if (Test-Path $SourceFile) {
+        Copy-Item -Path $SourceFile -Destination $BackupFile -Force
+    }
+}
+
+# Apply selected theme
+function Apply-Theme {
+    param ($SelectedFile)
     try {
-        # Get user selected theme file
-        $themeUrl = "$THEMES_URL/$selectedFile"
-
-        # Change theme
-        Invoke-WebRequest -Uri $themeUrl -OutFile $SOURCE_DIR
-
-        Write-Host "Changed theme to $(Format-Name $selectedFile) successfully!"
+        Backup-CurrentTheme
+        $ThemeUrl = "$ThemesUrl/$SelectedFile"
+        Invoke-WebRequest -Uri $ThemeUrl -OutFile $SourceFile -UseBasicParsing
+        Write-Host "Changed theme to '$(Format-ThemeName $SelectedFile)' successfully!"
         Write-Host "Please restart SAP GUI for changes to take effect."
     } catch {
-        Write-Host "Error: Change theme failed!"
+        Write-Host "Error: Failed to apply theme."
     }
 }
 
-# Check if there are theme files
-if ($FILES_LENGTH -eq 0) {
-    Write-Host "No theme XML file found."
-    exit 0
+# Rollback to previous theme
+function Rollback-Theme {
+    if (Test-Path $BackupFile) {
+        Copy-Item -Path $BackupFile -Destination $SourceFile -Force
+        Write-Host "Rolled back to previous theme successfully!"
+        Write-Host "Please restart SAP GUI for changes to take effect."
+    } else {
+        Write-Host "No previous theme backup found."
+    }
 }
 
-# Main menu
-while ($true) {
-    Write-Host "======================="
+# Main Menu
+do {
+    Clear-Host
+    Write-Host "==============================="
     Write-Host "[0] Exit program"
-    Write-Host "-----------------------"
-    Write-Host "Available themes:"
-    for ($i = 0; $i -lt $FILES_LENGTH; $i++) {
-        Write-Host "[$($i + $FILES_OFFSET)] $(Format-Name $FILES[$i]) theme"
+
+    # Show rollback option if backup exists
+    if (Test-Path $BackupFile) {
+        Write-Host "[R] Rollback to previous theme"
     }
-    Write-Host "======================="
 
-    $choice = Read-Host "Enter your option"
+    Write-Host "-------------------------------"
+    Write-Host "Available themes:"
 
-    # Validate user input
-    if ($choice -match "^[0-9]+$" -and
-        $choice -ge 0 -and
-        $choice -le ($FILES_LENGTH + $FILES_OFFSET)) {
+    for ($i = 0; $i -lt $Files.Count; $i++) {
+        Write-Host "[$($i + 1)] $(Format-ThemeName $Files[$i])"
+    }
+    Write-Host "==============================="
+
+    $Choice = Read-Host "Enter your option"
+
+    if ($Choice -eq "0") {
+        break
+    } elseif ($Choice -match "^[Rr]$" -and (Test-Path $BackupFile)) {
+        Rollback-Theme
+        break
+    } elseif ($Choice -match "^[0-9]+$" -and $Choice -ge 1 -and $Choice -le $Files.Count) {
+        $SelectedFile = $Files[$Choice - 1]
+        Apply-Theme $SelectedFile
         break
     } else {
-        Clear-Host
-        Write-Host "Not a valid input. Please try again."
+        Write-Host "Invalid option. Please try again."
+        Start-Sleep -Seconds 2
     }
-}
+} while ($true)
 
-# Handle user choice
-switch ($choice) {
-    0 { exit 0 }
-    default {
-        $selectedFile = $FILES[$choice - $FILES_OFFSET]
-        Change-Theme $selectedFile
-    }
-}
-
-# Wait for user input before exit
-Read-Host "Press any key to exit"
+Read-Host "Press Enter to exit"
