@@ -2,7 +2,7 @@
   "headers": [
     {
       "source": "/themes/(.*\\.xml)",
-      "headers": [{ "key": "Content-Disposition", "value": "attachment" }]
+      "headers": [{ "key": "Content-Disposition", "value": "application/xml" }]
     }
   ],
   "redirects": [
