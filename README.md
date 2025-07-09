@@ -1,7 +1,3 @@
-Here is your **updated, professional README** reflecting the **new features**:
-
----
-
 # SAP GUI Theme Changer
 
 ## 📄 Overview
