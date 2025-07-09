@@ -76,6 +76,28 @@ function Apply-RemoteTheme {
     }
 }
 
+# Function: Layout calculations
+function Get-Layout {
+    param (
+        [string]$Title,
+        [array]$Themes,
+        [int]$MaxNameLengthFromThemes
+    )
+
+    $defaultLength = $Title.Length - 14
+    $maxNameLength = [Math]::Max($defaultLength, $MaxNameLengthFromThemes)
+    $maxIndexHex = "{0:X}" -f $Themes.Count
+    $optionPrefixLength = ("[${maxIndexHex}] ").Length
+    $lineLength = $optionPrefixLength + $maxNameLength + 10
+    if ($lineLength -lt $defaultLength) { $lineLength = $defaultLength }
+
+    return @{
+        MaxNameLength = $maxNameLength
+        EqualsLine = "=" * $lineLength
+        DashLine = "-" * $lineLength
+    }
+}
+
 # Function: Show main menu (reusable)
 function Show-MainMenu {
     param (
@@ -119,7 +141,7 @@ function Show-MainMenu {
         }
         Write-Host $EqualsLine
 
-        $Choice = Read-Host "Enter your option (hex)"
+        $Choice = Read-Host "Enter your option"
 
         if ($Choice -eq "0") {
             return "exit"
@@ -178,19 +200,11 @@ switch (-not [string]::IsNullOrEmpty($MyInvocation.MyCommand.Path)) {
             $MergedThemes += $entries
         }
 
-        # Layout calculations
-        $defaultLength = $Title.Length - 14
-        $maxNameLengthFromThemes = ($ThemeDict.Keys | ForEach-Object { Format-ThemeName $_ } | Measure-Object -Property Length -Maximum).Maximum
-        $maxNameLength = [Math]::Max($defaultLength, $maxNameLengthFromThemes)
-        $maxIndexHex = "{0:X}" -f $MergedThemes.Count
-        $optionPrefixLength = ("[${maxIndexHex}] ").Length
-        $lineLength = $optionPrefixLength + $maxNameLength + 10
-        if ($lineLength -lt $defaultLength) { $lineLength = $defaultLength }
-        $equalsLine = "=" * $lineLength
-        $dashLine = "-" * $lineLength
+        # Layout calculation
+        $layout = Get-Layout -Title $Title -Themes $Themes -MaxNameLengthFromThemes $maxNameLengthFromThemes
 
         # Show menu
-        $result = Show-MainMenu -Title $Title -Themes $MergedThemes -ThemeDict $ThemeDict -Mode "local" -MaxNameLength $maxNameLength -EqualsLine $equalsLine -DashLine $dashLine
+        $result = Show-MainMenu -Title $Title -Themes $MergedThemes -ThemeDict $ThemeDict -Mode "local" -MaxNameLength $layout.MaxNameLength -EqualsLine $layout.EqualsLine -DashLine $layout.DashLine
         if ($result -eq "exit" -or $result -eq "rollback") { exit }
 
         $Selected = $MergedThemes[$result]
@@ -219,19 +233,11 @@ switch (-not [string]::IsNullOrEmpty($MyInvocation.MyCommand.Path)) {
         # Prepare themes array
         $ThemesArray = $RemoteThemes | ForEach-Object { @{ Name = $_; Source = "remote" } }
 
-        # Layout calculations
-        $defaultLength = $Title.Length - 14
-        $maxNameLengthFromThemes = ($RemoteThemes | ForEach-Object { Format-ThemeName $_ } | Measure-Object -Property Length -Maximum).Maximum
-        $maxNameLength = [Math]::Max($defaultLength, $maxNameLengthFromThemes)
-        $maxIndexHex = "{0:X}" -f $ThemesArray.Count
-        $optionPrefixLength = ("[${maxIndexHex}] ").Length
-        $lineLength = $optionPrefixLength + $maxNameLength + 10
-        if ($lineLength -lt $defaultLength) { $lineLength = $defaultLength }
-        $equalsLine = "=" * $lineLength
-        $dashLine = "-" * $lineLength
+        # Layout calculation
+        $layout = Get-Layout -Title $Title -Themes $Themes -MaxNameLengthFromThemes $maxNameLengthFromThemes
 
         # Show menu
-        $result = Show-MainMenu -Title $Title -Themes $ThemesArray -Mode "remote" -MaxNameLength $maxNameLength -EqualsLine $equalsLine -DashLine $dashLine
+        $result = Show-MainMenu -Title $Title -Themes $ThemesArray -Mode "remote" -MaxNameLength $layout.MaxNameLength -EqualsLine $layout.EqualsLine -DashLine $layout.DashLine
         if ($result -eq "exit" -or $result -eq "rollback") { exit }
 
         $SelectedFile = $ThemesArray[$result].Name
