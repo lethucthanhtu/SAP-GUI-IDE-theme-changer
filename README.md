@@ -86,9 +86,3 @@ When a theme is applied:
 * Files must be accessible via URLs matching the entries in `themes.json`
 
 ---
-
-## 📝 License
-
-MIT
-
----
