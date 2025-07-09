@@ -25,7 +25,13 @@
 
 ```powershell
 git clone https://github.com/lethucthanhtu/SAP-GUI-IDE-theme-changer.git
+```
+
+```powershell
 cd SAP-GUI-IDE-theme-changer
+```
+
+```powershell
 .\public\editor.ps1
 ```
 
@@ -78,5 +84,11 @@ When a theme is applied:
 ```
 
 * Files must be accessible via URLs matching the entries in `themes.json`
+
+---
+
+## 📝 License
+
+MIT
 
 ---
