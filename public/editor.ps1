@@ -76,6 +76,70 @@ function Apply-RemoteTheme {
     }
 }
 
+# Function: Show main menu (reusable)
+function Show-MainMenu {
+    param (
+        [string]$Title,
+        [array]$Themes,
+        [hashtable]$ThemeDict = @{},
+        [string]$Mode,
+        [int]$MaxNameLength,
+        [string]$EqualsLine,
+        [string]$DashLine
+    )
+
+    do {
+        Clear-Host
+        Write-Host $Title
+        Write-Host $EqualsLine
+        Write-Host "[0] Exit program"
+
+        if (Test-Path $BackupFile) {
+            Write-Host "[R] Rollback to previous theme"
+        }
+
+        Write-Host $DashLine
+        Write-Host "Available themes:"
+
+        for ($i = 0; $i -lt $Themes.Count; $i++) {
+            $entry = $Themes[$i]
+            $displayName = Format-ThemeName $entry.Name
+            $optionHex = "{0:X}" -f ($i + 1)
+
+            if ($Mode -eq "local") {
+                $sources = $ThemeDict[$displayName] | Select-Object -ExpandProperty Source
+                $isDuplicate = ($sources | Select-Object -Unique).Count -gt 1
+                $tag = if ($isDuplicate) { "($($entry.Source))" } else { "" }
+            } else {
+                $tag = ""
+            }
+
+            $paddedName = $displayName.PadRight($MaxNameLength + 2)
+            Write-Host ("[{0}] {1} {2}" -f $optionHex, $paddedName, $tag)
+        }
+        Write-Host $EqualsLine
+
+        $Choice = Read-Host "Enter your option (hex)"
+
+        if ($Choice -eq "0") {
+            return "exit"
+        } elseif ($Choice -match "^[Rr]$" -and (Test-Path $BackupFile)) {
+            Copy-Item -Path $BackupFile -Destination $SourceFile -Force
+            Write-Host "Rolled back to previous theme successfully."
+            Write-Host "Please restart SAP GUI for changes to take effect."
+            return "rollback"
+        } elseif ($Choice -match "^[0-9A-Fa-f]+$") {
+            $ChoiceDec = [Convert]::ToInt32($Choice, 16)
+            if ($ChoiceDec -ge 1 -and $ChoiceDec -le $Themes.Count) {
+                return $ChoiceDec - 1
+            }
+        }
+
+        Write-Host "Invalid input. Please try again."
+        Start-Sleep -Seconds 1
+    } while ($true)
+}
+
 # ===================================
 # Detect local vs remote execution
 # ===================================
@@ -83,6 +147,7 @@ function Apply-RemoteTheme {
 switch (-not [string]::IsNullOrEmpty($MyInvocation.MyCommand.Path)) {
     $true {
         # Local execution
+        $Title = "SAP GUI Theme Changer (Local Execution)"
         $ThemesFolder = Join-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.Path) -ChildPath "themes"
         $LocalThemes = Get-LocalThemes -ThemesFolder $ThemesFolder
 
@@ -97,16 +162,12 @@ switch (-not [string]::IsNullOrEmpty($MyInvocation.MyCommand.Path)) {
         $ThemeDict = @{}
         foreach ($theme in $LocalThemes) {
             $displayName = Format-ThemeName $theme
-            if (-not $ThemeDict.ContainsKey($displayName)) {
-                $ThemeDict[$displayName] = @()
-            }
+            if (-not $ThemeDict.ContainsKey($displayName)) { $ThemeDict[$displayName] = @() }
             $ThemeDict[$displayName] += @{ Name = $theme; Source = "local" }
         }
         foreach ($theme in $RemoteThemes) {
             $displayName = Format-ThemeName $theme
-            if (-not $ThemeDict.ContainsKey($displayName)) {
-                $ThemeDict[$displayName] = @()
-            }
+            if (-not $ThemeDict.ContainsKey($displayName)) { $ThemeDict[$displayName] = @() }
             $ThemeDict[$displayName] += @{ Name = $theme; Source = "remote" }
         }
 
@@ -117,76 +178,33 @@ switch (-not [string]::IsNullOrEmpty($MyInvocation.MyCommand.Path)) {
             $MergedThemes += $entries
         }
 
-        # Calculate layout lengths
-        $defaultLine = "[R] Rollback to previous theme"
-        $defaultLength = $defaultLine.Length - 15
+        # Layout calculations
+        $defaultLength = $Title.Length - 14
         $maxNameLengthFromThemes = ($ThemeDict.Keys | ForEach-Object { Format-ThemeName $_ } | Measure-Object -Property Length -Maximum).Maximum
         $maxNameLength = [Math]::Max($defaultLength, $maxNameLengthFromThemes)
-
         $maxIndexHex = "{0:X}" -f $MergedThemes.Count
         $optionPrefixLength = ("[${maxIndexHex}] ").Length
         $lineLength = $optionPrefixLength + $maxNameLength + 10
-        if ($lineLength -lt 30) { $lineLength = 30 } # Minimum line length
-
+        if ($lineLength -lt $defaultLength) { $lineLength = $defaultLength }
         $equalsLine = "=" * $lineLength
         $dashLine = "-" * $lineLength
 
-        # Main Menu
-        do {
-            Clear-Host
-            Write-Host "SAP GUI Theme Changer (Local Execution)"
-            Write-Host $equalsLine
-            Write-Host "[0] Exit program"
+        # Show menu
+        $result = Show-MainMenu -Title $Title -Themes $MergedThemes -ThemeDict $ThemeDict -Mode "local" -MaxNameLength $maxNameLength -EqualsLine $equalsLine -DashLine $dashLine
+        if ($result -eq "exit" -or $result -eq "rollback") { exit }
 
-            if (Test-Path $BackupFile) {
-                Write-Host "$defaultLine"
-            }
-
-            Write-Host $dashLine
-            Write-Host "Available themes:"
-
-            for ($i = 0; $i -lt $MergedThemes.Count; $i++) {
-                $entry = $MergedThemes[$i]
-                $displayName = Format-ThemeName $entry.Name
-                $sources = $ThemeDict[$displayName] | Select-Object -ExpandProperty Source
-                $isDuplicate = ($sources | Select-Object -Unique).Count -gt 1
-                $tag = if ($isDuplicate) { "($($entry.Source))" } else { "" }
-
-                $optionHex = "{0:X}" -f ($i + 1)
-                $paddedName = $displayName.PadRight($maxNameLength + 2)
-                Write-Host ("[{0}] {1} {2}" -f $optionHex, $paddedName, $tag)
-            }
-            Write-Host $equalsLine
-
-            $Choice = Read-Host "Enter your option"
-
-            if ($Choice -eq "0") {
-                break
-            } elseif ($Choice -match "^[Rr]$" -and (Test-Path $BackupFile)) {
-                Copy-Item -Path $BackupFile -Destination $SourceFile -Force
-                Write-Host "Rolled back to previous theme successfully."
-                Write-Host "Please restart SAP GUI for changes to take effect."
-                break
-            } elseif ($Choice -match "^[0-9A-Fa-f]+$") {
-                $ChoiceDec = [Convert]::ToInt32($Choice, 16)
-                if ($ChoiceDec -ge 1 -and $ChoiceDec -le $MergedThemes.Count) {
-                    $Selected = $MergedThemes[$ChoiceDec - 1]
-                    if ($Selected.Source -eq "local") {
-                        Apply-LocalTheme -ThemesFolder $ThemesFolder -SelectedFile $Selected.Name
-                    } else {
-                        $UsingUrl = ($RemoteResult.Success) ? $PrimaryThemesUrl : $FallbackThemesUrl
-                        Apply-RemoteTheme -ThemesUrl $UsingUrl -SelectedFile $Selected.Name
-                    }
-                    break
-                }
-            }
-            Write-Host "Invalid input. Please try again."
-            Start-Sleep -Seconds 1
-        } while ($true)
+        $Selected = $MergedThemes[$result]
+        if ($Selected.Source -eq "local") {
+            Apply-LocalTheme -ThemesFolder $ThemesFolder -SelectedFile $Selected.Name
+        } else {
+            $UsingUrl = ($RemoteResult.Success) ? $PrimaryThemesUrl : $FallbackThemesUrl
+            Apply-RemoteTheme -ThemesUrl $UsingUrl -SelectedFile $Selected.Name
+        }
     }
 
     default {
         # Remote execution only
+        $Title = "SAP GUI Theme Changer (Remote Execution)"
         $RemoteResult = Get-RemoteThemes -ThemesUrl $PrimaryThemesUrl
         if (-not $RemoteResult.Success) {
             $RemoteResult = Get-RemoteThemes -ThemesUrl $FallbackThemesUrl
@@ -198,63 +216,27 @@ switch (-not [string]::IsNullOrEmpty($MyInvocation.MyCommand.Path)) {
 
         $RemoteThemes = $RemoteResult.Files | Sort-Object
 
-        # Calculate layout lengths
-        $defaultLine = "[R] Rollback to previous theme"
-        $defaultLength = $defaultLine.Length - "[R] ".Length
+        # Prepare themes array
+        $ThemesArray = $RemoteThemes | ForEach-Object { @{ Name = $_; Source = "remote" } }
+
+        # Layout calculations
+        $defaultLength = $Title.Length - 14
         $maxNameLengthFromThemes = ($RemoteThemes | ForEach-Object { Format-ThemeName $_ } | Measure-Object -Property Length -Maximum).Maximum
         $maxNameLength = [Math]::Max($defaultLength, $maxNameLengthFromThemes)
-
-        $maxIndexHex = "{0:X}" -f $RemoteThemes.Count
+        $maxIndexHex = "{0:X}" -f $ThemesArray.Count
         $optionPrefixLength = ("[${maxIndexHex}] ").Length
         $lineLength = $optionPrefixLength + $maxNameLength + 10
-        if ($lineLength -lt 30) { $lineLength = 30 }
-
+        if ($lineLength -lt $defaultLength) { $lineLength = $defaultLength }
         $equalsLine = "=" * $lineLength
         $dashLine = "-" * $lineLength
 
-        # Main Menu
-        do {
-            Clear-Host
-            Write-Host "SAP GUI Theme Changer (Remote Execution)"
-            Write-Host $equalsLine
-            Write-Host "[0] Exit program"
+        # Show menu
+        $result = Show-MainMenu -Title $Title -Themes $ThemesArray -Mode "remote" -MaxNameLength $maxNameLength -EqualsLine $equalsLine -DashLine $dashLine
+        if ($result -eq "exit" -or $result -eq "rollback") { exit }
 
-            if (Test-Path $BackupFile) {
-                Write-Host "$defaultLine"
-            }
-
-            Write-Host $dashLine
-            Write-Host "Available themes:"
-
-            for ($i = 0; $i -lt $RemoteThemes.Count; $i++) {
-                $optionHex = "{0:X}" -f ($i + 1)
-                $displayName = Format-ThemeName $RemoteThemes[$i]
-                $paddedName = $displayName.PadRight($maxNameLength + 2)
-                Write-Host ("[{0}] {1}" -f $optionHex, $paddedName)
-            }
-            Write-Host $equalsLine
-
-            $Choice = Read-Host "Enter your option"
-
-            if ($Choice -eq "0") {
-                break
-            } elseif ($Choice -match "^[Rr]$" -and (Test-Path $BackupFile)) {
-                Copy-Item -Path $BackupFile -Destination $SourceFile -Force
-                Write-Host "Rolled back to previous theme successfully."
-                Write-Host "Please restart SAP GUI for changes to take effect."
-                break
-            } elseif ($Choice -match "^[0-9A-Fa-f]+$") {
-                $ChoiceDec = [Convert]::ToInt32($Choice, 16)
-                if ($ChoiceDec -ge 1 -and $ChoiceDec -le $RemoteThemes.Count) {
-                    $SelectedFile = $RemoteThemes[$ChoiceDec - 1]
-                    $UsingUrl = ($RemoteResult.Success) ? $PrimaryThemesUrl : $FallbackThemesUrl
-                    Apply-RemoteTheme -ThemesUrl $UsingUrl -SelectedFile $SelectedFile
-                    break
-                }
-            }
-            Write-Host "Invalid input. Please try again."
-            Start-Sleep -Seconds 1
-        } while ($true)
+        $SelectedFile = $ThemesArray[$result].Name
+        $UsingUrl = ($RemoteResult.Success) ? $PrimaryThemesUrl : $FallbackThemesUrl
+        Apply-RemoteTheme -ThemesUrl $UsingUrl -SelectedFile $SelectedFile
     }
 }
 
