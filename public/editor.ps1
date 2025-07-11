@@ -84,7 +84,7 @@ function Get-Layout {
         [int]$MaxNameLengthFromThemes
     )
 
-    $defaultLength = $Title.Length - 14 # Magic number
+    $defaultLength = $Title.Length
     $maxNameLength = [Math]::Max($defaultLength, $MaxNameLengthFromThemes)
     $maxIndexHex = "{0:X}" -f $Themes.Count
     $optionPrefixLength = ("[${maxIndexHex}] ").Length
@@ -115,7 +115,10 @@ function Show-MainMenu {
         Write-Host $Title
         Write-Host $EqualsLine
         Write-Host "[0] Exit program"
-        Write-Host "[1] Rollback to previous theme"
+
+        if (Test-Path $BackupFile) {
+            Write-Host "[1] Rollback to previous theme"
+        }
 
         if ($Mode -eq "remote") {
             Write-Host "[2] Specify local themes folder"
@@ -141,7 +144,14 @@ function Show-MainMenu {
         $Choice = Read-Host "Enter your option"
 
         if ($Choice -eq "0") { return "exit" }
-        elseif ($Choice -eq "1") { return "rollback" }
+        elseif ($Choice -eq "1") {
+            if (Test-Path $BackupFile) {
+                return "rollback"
+            } else {
+                Write-Host "No previous theme backup found."
+                Start-Sleep -Seconds 2
+            }
+        }
         elseif ($Choice -eq "2" -and $Mode -eq "remote") { return "specifyLocal" }
         elseif ($Choice -match "^[0-9A-Fa-f]+$") {
             $ChoiceDec = [Convert]::ToInt32($Choice, 16) - 3
@@ -231,13 +241,9 @@ do {
 
     if ($result -eq "exit") { exit }
     elseif ($result -eq "rollback") {
-        if (Test-Path $BackupFile) {
-            Copy-Item -Path $BackupFile -Destination $SourceFile -Force
-            Write-Host "Rolled back to previous theme successfully."
-            Write-Host "Please restart SAP GUI for changes to take effect."
-        } else {
-            Write-Host "No backup theme found."
-        }
+        Copy-Item -Path $BackupFile -Destination $SourceFile -Force
+        Write-Host "Rolled back to previous theme successfully."
+        Write-Host "Please restart SAP GUI for changes to take effect."
         exit
     }
     elseif ($result -eq "specifyLocal" -and $Mode -eq "remote") {
@@ -256,6 +262,7 @@ do {
             }
         } else {
             Write-Host "Invalid path. Continuing with existing themes."
+            Start-Sleep -Seconds 1
         }
     }
     elseif ($null -ne $result) {
