@@ -266,17 +266,19 @@ do {
         }
     }
     elseif ($null -ne $result) {
-        $Selected = $Themes[$result]
-        if ($Selected.Source -eq "local") {
-            Apply-LocalTheme -ThemesFolder $Selected.Path -SelectedFile $Selected.Name
-        } else {
-            $UsingUrl = ($RemoteResult.Success) ? $PrimaryThemesUrl : $FallbackThemesUrl
-            Apply-RemoteTheme -ThemesUrl $UsingUrl -SelectedFile $Selected.Name
-        }
-        # exit
-        Write-Host "Please restart SAP GUI for changes to take effect."
+    $Selected = $Themes[$result]
+    if ($Selected.Source -eq "local") {
+        Apply-LocalTheme -ThemesFolder $Selected.Path -SelectedFile $Selected.Name
+    } else {
+        $UsingUrl = ($RemoteResult.Success) ? $PrimaryThemesUrl : $FallbackThemesUrl
+        Apply-RemoteTheme -ThemesUrl $UsingUrl -SelectedFile $Selected.Name
     }
-} while ($true)
 
-Write-Host ""
-Write-Host "You can close this window now."
+    # Show selected theme confirmation and prompt before exit
+    Write-Host ""
+    Write-Host "Theme '$(Format-ThemeName $Selected.Name)' applied successfully."
+    Write-Host "Please restart SAP GUI for changes to take effect."
+    Read-Host "Press Enter to exit"
+    exit
+}
+} while ($true)
