@@ -84,11 +84,11 @@ function Get-Layout {
         [int]$MaxNameLengthFromThemes
     )
 
-    $defaultLength = $Title.Length
+    $defaultLength = $Title.Length - 14 # Magic number
     $maxNameLength = [Math]::Max($defaultLength, $MaxNameLengthFromThemes)
     $maxIndexHex = "{0:X}" -f $Themes.Count
     $optionPrefixLength = ("[${maxIndexHex}] ").Length
-    $lineLength = $optionPrefixLength + $maxNameLength + 10
+    $lineLength = $optionPrefixLength + $maxNameLength + 10 # Magic number
     if ($lineLength -lt $defaultLength) { $lineLength = $defaultLength }
 
     return @{
