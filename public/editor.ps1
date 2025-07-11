@@ -276,8 +276,6 @@ do {
 
     # Show selected theme confirmation and prompt before exit
     Write-Host ""
-    Write-Host "Theme '$(Format-ThemeName $Selected.Name)' applied successfully."
-    Write-Host "Please restart SAP GUI for changes to take effect."
     Read-Host "Press Enter to exit"
     exit
 }
