@@ -158,7 +158,7 @@ function Show-MainMenu {
 # ===================================
 
 switch (-not [string]::IsNullOrEmpty($MyInvocation.MyCommand.Path)) {
-    $false {
+    $true {
         # Local execution
         $Mode = "local"
         $Title = "SAP GUI Theme Changer (Local Execution)"
