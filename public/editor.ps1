@@ -273,7 +273,8 @@ do {
             $UsingUrl = ($RemoteResult.Success) ? $PrimaryThemesUrl : $FallbackThemesUrl
             Apply-RemoteTheme -ThemesUrl $UsingUrl -SelectedFile $Selected.Name
         }
-        exit
+        # exit
+        Write-Host "Please restart SAP GUI for changes to take effect."
     }
 } while ($true)
 
