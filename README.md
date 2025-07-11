@@ -99,6 +99,13 @@ When a theme is applied:
 
 ## 📝 License
 
-MIT
+[GPL-3.0 license](./LICENSE)
+
+---
+
+### 🙏 **Credits**
+
+This project includes themes adapted from [lucattelli/ab4-themes](https://github.com/lucattelli/ab4-themes),  
+which is licensed under **GPL v3.0**.
 
 ---
