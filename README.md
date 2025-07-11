@@ -46,10 +46,16 @@ cd SAP-GUI-IDE-theme-changer
 
 ### **Run Remotely via IWR**
 
-If hosted on a public server with HTTPS:
+Call it via public server with HTTPS:
 
 ```powershell
 iwr -useb https://sap.lttt.dev/editor.ps1 | iex
+```
+
+Backup Server
+
+```powershell
+iwr -useb https://letu-sap.vercel.app/editor.ps1 | iex
 ```
 
 ⚠️ Note on path input:
