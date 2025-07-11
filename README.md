@@ -105,7 +105,7 @@ When a theme is applied:
 
 ### 🙏 **Credits**
 
-This project includes themes adapted from [lucattelli/ab4-themes](https://github.com/lucattelli/ab4-themes),  
+This project includes themes adapted from [lucattelli/ab4-themes](https://github.com/lucattelli/ab4-themes),
 which is licensed under **GPL v3.0**.
 
 ---
