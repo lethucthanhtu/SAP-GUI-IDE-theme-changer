@@ -62,6 +62,14 @@ iwr -useb https://sap.lttt.dev/editor.ps1 | iex
 
 * Alternatively, press `Windows+V` to access your clipboard history and select the copied path
 
+⚠️ **Disclaimer:**
+
+While this script provides a **backup feature** before applying new themes,
+you must ensure that your selected XML files are **valid SAP GUI theme files**.
+
+✅ Applying an invalid or malformed XML may cause unexpected behavior in your SAP GUI.
+✅ Always verify the integrity of your theme files before use.
+
 ---
 
 ## 🔄 Rollback Feature
