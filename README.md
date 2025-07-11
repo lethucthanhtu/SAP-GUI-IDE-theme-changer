@@ -52,6 +52,16 @@ If hosted on a public server with HTTPS:
 iwr -useb https://sap.lttt.dev/editor.ps1 | iex
 ```
 
+⚠️ Note on path input:
+
+* If `Ctrl+V` does not paste your path in the prompt:
+
+* Use `Ctrl+Shift+V`
+
+* Use `Right Click` or `Shift+Insert` to paste
+
+* Alternatively, press `Windows+V` to access your clipboard history and select the copied path
+
 ---
 
 ## 🔄 Rollback Feature
