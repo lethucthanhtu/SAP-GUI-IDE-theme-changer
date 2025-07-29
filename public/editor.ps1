@@ -359,7 +359,12 @@ do {
         if ($Selected.Source -eq "local") {
             Apply-LocalTheme -ThemesFolder $Selected.Path -SelectedFile $Selected.Name
         } else {
-            $UsingUrl = ($RemoteResult.Success) ? $PrimaryThemesUrl : $FallbackThemesUrl
+            # $UsingUrl = ($RemoteResult.Success) ? $PrimaryThemesUrl : $FallbackThemesUrl
+            if ($RemoteResult.Success) {
+                $UsingUrl = $PrimaryThemesUrl
+            } else {
+                $UsingUrl = $FallbackThemesUrl
+            }
             Apply-RemoteTheme -ThemesUrl $UsingUrl -SelectedFile $Selected.Name
         }
 
