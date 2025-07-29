@@ -209,13 +209,21 @@ function Show-MainMenu {
             }
 
             try {
-                $sources = $ThemeDict[$displayName] | Select-Object -ExpandProperty Source
-                $isDuplicate = ($sources | Select-Object -Unique).Count -gt 1
-                $tag = if ($isDuplicate) { "($($entry.Source))" } else { "" }
+                $entry = $ThemeDict[$displayName]
+
+                if ($entry -and $entry.PSObject.Properties.Name -contains "Source") {
+                    $sources = $entry.Source
+                    $isDuplicate = ($sources | Select-Object -Unique).Count -gt 1
+                    $tag = if ($isDuplicate) { "($($entry.Source))" } else { "" }
+                } else {
+                    $tag = ""
+                }
 
                 $paddedName = $displayName.PadRight($MaxNameLength + 2)
                 Write-Host ("[{0}] {1} {2}" -f $optionDisplay, $paddedName, $tag)
-            } catch {
+            }
+            catch {
+                $paddedName = $displayName.PadRight($MaxNameLength + 2)
                 Write-Host ("[{0}] {1}" -f $optionDisplay, $paddedName)
             }
         }
