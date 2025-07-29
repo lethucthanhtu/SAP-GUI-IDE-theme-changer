@@ -49,13 +49,13 @@ cd SAP-GUI-IDE-theme-changer
 Call it via public server with HTTPS:
 
 ```powershell
-iwr -useb https://sap.lttt.dev/editor.ps1 | iex
+iwr -useb "https://sap.lttt.dev/editor.ps1" | iex
 ```
 
 Backup Server
 
 ```powershell
-iwr -useb https://letu-sap.vercel.app/editor.ps1 | iex
+iwr -useb "https://letu-sap.vercel.app/editor.ps1" | iex
 ```
 
 ⚠️ Note on path input:
