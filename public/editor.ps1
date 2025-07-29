@@ -208,12 +208,16 @@ function Show-MainMenu {
                 $optionDisplay = ($i + 3).ToString()
             }
 
-            $sources = $ThemeDict[$displayName] | Select-Object -ExpandProperty Source
-            $isDuplicate = ($sources | Select-Object -Unique).Count -gt 1
-            $tag = if ($isDuplicate) { "($($entry.Source))" } else { "" }
+            try {
+                $sources = $ThemeDict[$displayName] | Select-Object -ExpandProperty Source
+                $isDuplicate = ($sources | Select-Object -Unique).Count -gt 1
+                $tag = if ($isDuplicate) { "($($entry.Source))" } else { "" }
 
-            $paddedName = $displayName.PadRight($MaxNameLength + 2)
-            Write-Host ("[{0}] {1} {2}" -f $optionDisplay, $paddedName, $tag)
+                $paddedName = $displayName.PadRight($MaxNameLength + 2)
+                Write-Host ("[{0}] {1} {2}" -f $optionDisplay, $paddedName, $tag)
+            } catch {
+                Write-Host ("[{0}] {1}" -f $optionDisplay, $paddedName)
+            }
         }
         Write-Host $EqualsLine
 
