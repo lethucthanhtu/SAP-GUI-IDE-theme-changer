@@ -62,7 +62,6 @@ $BackupFile = "$env:APPDATA\SAP\SAP GUI\ABAP Editor\abap_spec.previous_theme.xml
 # ===================================
 # Function: Format display name
 # ===================================
-
 function Format-ThemeName {
     param ($FileName)
     return ($FileName -replace "_theme.xml", "" -replace "_", " ")
@@ -71,7 +70,6 @@ function Format-ThemeName {
 # ===================================
 # Function: Backup current theme
 # ===================================
-
 function Backup-CurrentTheme {
     if (Test-Path $SourceFile) {
         Copy-Item -Path $SourceFile -Destination $BackupFile -Force
@@ -81,7 +79,6 @@ function Backup-CurrentTheme {
 # ===================================
 # Function: Get local themes
 # ===================================
-
 function Get-LocalThemes {
     param ($ThemesFolder)
     if (-not (Test-Path $ThemesFolder)) {
@@ -93,7 +90,6 @@ function Get-LocalThemes {
 # ===================================
 # Function: Get remote themes
 # ===================================
-
 function Get-RemoteThemes {
     param ($ThemesUrl)
     try {
@@ -108,7 +104,6 @@ function Get-RemoteThemes {
 # ===================================
 # Function: Apply theme from local
 # ===================================
-
 function Apply-LocalTheme {
     param ($ThemesFolder, $SelectedFile)
     try {
@@ -126,7 +121,6 @@ function Apply-LocalTheme {
 # ===================================
 # Function: Apply theme from remote
 # ===================================
-
 function Apply-RemoteTheme {
     param ($ThemesUrl, $SelectedFile)
     try {
@@ -144,7 +138,6 @@ function Apply-RemoteTheme {
 # ===================================
 # Function: Layout calculations
 # ===================================
-
 function Get-Layout {
     param (
         [string]$Title,
@@ -169,7 +162,6 @@ function Get-Layout {
 # ===================================
 # Function: Show main menu (reusable)
 # ===================================
-
 function Show-MainMenu {
     param (
         [string]$Title,
@@ -257,7 +249,6 @@ function Show-MainMenu {
 # ===================================
 # Detect local vs remote execution using switch
 # ===================================
-
 switch (-not [string]::IsNullOrEmpty($MyInvocation.MyCommand.Path)) {
     $true {
         # Local execution
@@ -328,14 +319,12 @@ switch (-not [string]::IsNullOrEmpty($MyInvocation.MyCommand.Path)) {
 # ===================================
 # Layout calculation
 # ===================================
-
 $maxNameLengthFromThemes = ($ThemeDict.Keys | ForEach-Object { Format-ThemeName $_ } | Measure-Object -Property Length -Maximum).Maximum
 $layout = Get-Layout -Title $Title -Themes $Themes -MaxNameLengthFromThemes $maxNameLengthFromThemes
 
 # ===================================
 # Show menu loop
 # ===================================
-
 do {
     $result = Show-MainMenu -Title $Title -Themes $Themes -ThemeDict $ThemeDict -Mode $Mode -MaxNameLength $layout.MaxNameLength -EqualsLine $layout.EqualsLine -DashLine $layout.DashLine
 

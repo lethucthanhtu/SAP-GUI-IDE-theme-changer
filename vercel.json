@@ -1,17 +1,20 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "headers": [
     {
       "source": "/editor.ps1",
       "headers": [
         { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-        { "key": "Content-Disposition", "value": "inline" }
+        { "key": "Content-Disposition", "value": "inline" },
+        { "key": "favicon", "value": "https://cdn.lttt.dev/logo.svg" }
       ]
     },
     {
       "source": "/themes/(.*\\.xml)",
       "headers": [
         { "key": "Content-Type", "value": "text/xml; charset=utf-8" },
-        { "key": "Content-Disposition", "value": "inline" }
+        { "key": "Content-Disposition", "value": "inline" },
+        { "key": "favicon", "value": "https://cdn.lttt.dev/logo.svg" }
       ]
     }
   ],
