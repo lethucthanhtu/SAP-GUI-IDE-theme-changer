@@ -19,6 +19,14 @@
 
 ---
 
+## 🧰 Requirements
+
+* Windows with SAP GUI for Windows installed (theme file lives in `%APPDATA%\SAP\SAP GUI\ABAP Editorbap_spec.xml`)
+* Windows PowerShell 5.1 or PowerShell 7+
+* Internet access to `sap.lttt.dev` (or the Vercel backup) for remote themes
+
+---
+
 ## 🚀 Usage
 
 ### **Run Locally**
@@ -58,6 +66,24 @@ Backup Server
 irm https://letu-sap.vercel.app/editor.ps1 | iex
 ```
 
+🔒 **Safer: review before you run.** `irm | iex` runs whatever the server returns at that moment.
+To check the script first:
+
+```powershell
+irm https://cdn.lttt.dev/sap/editor.ps1 -OutFile editor.ps1
+notepad .\editor.ps1                 # read it
+Get-FileHash .\editor.ps1 -Algorithm SHA256
+powershell -ExecutionPolicy Bypass -File .\editor.ps1
+```
+
+Or pin to an exact, reviewed commit on GitHub (replace `<commit>` with a full commit SHA):
+
+```powershell
+irm https://raw.githubusercontent.com/lethucthanhtu/SAP-GUI-IDE-theme-changer/<commit>/public/editor.ps1 | iex
+```
+
+See [SECURITY.md](./SECURITY.md).
+
 ⚠️ Note on path input:
 
 * If `Ctrl+V` does not paste your path in the prompt:
@@ -76,6 +102,18 @@ When a theme is applied:
 
 * The existing `abap_spec.xml` is backed up as `abap_spec.previous_theme.xml`
 * Rollback restores this backup, enabling seamless reversion to your previous setup
+* The very first time a theme is applied, the original file is also copied to `abap_spec.original.xml`; this copy is never overwritten
+
+### Restore / uninstall
+
+The script installs nothing. To go back to the theme you had before using it, close SAP GUI and run:
+
+```powershell
+$dir = "$env:APPDATA\SAP\SAP GUI\ABAP Editor"
+Copy-Item "$dirbap_spec.original.xml" "$dirbap_spec.xml" -Force
+```
+
+Then delete `abap_spec.previous_theme.xml` and `abap_spec.original.xml` if you no longer need them.
 
 ---
 
