@@ -59,6 +59,9 @@ $SourceFile = "$env:APPDATA\SAP\SAP GUI\ABAP Editor\abap_spec.xml"
 # It is recommended to keep it in the same folder as the source file
 $BackupFile = "$env:APPDATA\SAP\SAP GUI\ABAP Editor\abap_spec.previous_theme.xml"
 
+# One-time copy of the theme you had before first using this script (never overwritten)
+$OriginalBackupFile = "$env:APPDATA\SAP\SAP GUI\ABAP Editor\abap_spec.original.xml"
+
 # ===================================
 # Function: Format display name
 # ===================================
@@ -72,7 +75,10 @@ function Format-ThemeName {
 # ===================================
 function Backup-CurrentTheme {
     if (Test-Path $SourceFile) {
-        Copy-Item -Path $SourceFile -Destination $BackupFile -Force
+        if (-not (Test-Path $OriginalBackupFile)) {
+            Copy-Item -Path $SourceFile -Destination $OriginalBackupFile -ErrorAction Stop
+        }
+        Copy-Item -Path $SourceFile -Destination $BackupFile -Force -ErrorAction Stop
     }
 }
 
@@ -109,12 +115,12 @@ function Apply-LocalTheme {
     try {
         Backup-CurrentTheme
         $ThemeFilePath = Join-Path -Path $ThemesFolder -ChildPath $SelectedFile
-        Copy-Item -Path $ThemeFilePath -Destination $SourceFile -Force
+        Copy-Item -Path $ThemeFilePath -Destination $SourceFile -Force -ErrorAction Stop
         Write-Host ""
         Write-Host "Changed theme to '$(Format-ThemeName $SelectedFile)' successfully."
         Write-Host "Please restart SAP GUI for changes to take effect."
     } catch {
-        Write-Host "Error: Failed to apply local theme."
+        Write-Host "Error: Failed to apply local theme. $($_.Exception.Message)"
     }
 }
 
@@ -124,14 +130,24 @@ function Apply-LocalTheme {
 function Apply-RemoteTheme {
     param ($ThemesUrl, $SelectedFile)
     try {
-        Backup-CurrentTheme
         $ThemeUrl = "$ThemesUrl/$SelectedFile"
-        Invoke-WebRequest -Uri $ThemeUrl -OutFile $SourceFile -UseBasicParsing
+        # Download to a temp file and check it is an ABAP Editor spec before touching the real file
+        $TempFile = [System.IO.Path]::GetTempFileName()
+        try {
+            Invoke-WebRequest -Uri $ThemeUrl -OutFile $TempFile -UseBasicParsing -ErrorAction Stop
+            if (([xml](Get-Content -Path $TempFile -Raw)).DocumentElement.Name -ne "XMLConfigSettings") {
+                throw "Downloaded file is not an ABAP Editor theme."
+            }
+            Backup-CurrentTheme
+            Copy-Item -Path $TempFile -Destination $SourceFile -Force -ErrorAction Stop
+        } finally {
+            Remove-Item -Path $TempFile -ErrorAction SilentlyContinue
+        }
         Write-Host ""
         Write-Host "Changed theme to '$(Format-ThemeName $SelectedFile)' successfully."
         Write-Host "Please restart SAP GUI for changes to take effect."
     } catch {
-        Write-Host "Error: Failed to apply remote theme."
+        Write-Host "Error: Failed to apply remote theme. $($_.Exception.Message)"
     }
 }
 
@@ -200,24 +216,10 @@ function Show-MainMenu {
                 $optionDisplay = ($i + 3).ToString()
             }
 
-            try {
-                $entry = $ThemeDict[$displayName]
-
-                if ($entry -and $entry.PSObject.Properties.Name -contains "Source") {
-                    $sources = $entry.Source
-                    $isDuplicate = ($sources | Select-Object -Unique).Count -gt 1
-                    $tag = if ($isDuplicate) { "($($entry.Source))" } else { "" }
-                } else {
-                    $tag = ""
-                }
-
-                $paddedName = $displayName.PadRight($MaxNameLength + 2)
-                Write-Host ("[{0}] {1} {2}" -f $optionDisplay, $paddedName, $tag)
-            }
-            catch {
-                $paddedName = $displayName.PadRight($MaxNameLength + 2)
-                Write-Host ("[{0}] {1}" -f $optionDisplay, $paddedName)
-            }
+            # Tag the source only when the same theme name exists both locally and remotely
+            $tag = if (@($ThemeDict[$displayName]).Count -gt 1) { "($($entry.Source))" } else { "" }
+            $paddedName = $displayName.PadRight($MaxNameLength + 2)
+            Write-Host ("[{0}] {1} {2}" -f $optionDisplay, $paddedName, $tag)
         }
         Write-Host $EqualsLine
 
@@ -330,7 +332,7 @@ do {
 
     if ($result -eq "exit") { exit }
     elseif ($result -eq "rollback") {
-        Copy-Item -Path $BackupFile -Destination $SourceFile -Force
+        Copy-Item -Path $BackupFile -Destination $SourceFile -Force -ErrorAction Stop
         Write-Host "Rolled back to previous theme successfully."
         Write-Host "Please restart SAP GUI for changes to take effect."
         Read-Host "Press Enter to exit"
@@ -369,10 +371,6 @@ do {
             Apply-RemoteTheme -ThemesUrl $UsingUrl -SelectedFile $Selected.Name
         }
 
-        # Show selected theme confirmation and prompt before exit
-        Write-Host ""
-        Write-Host "Theme '$(Format-ThemeName $Selected.Name)' applied successfully."
-        Write-Host "Please restart SAP GUI for changes to take effect."
         Read-Host "Press Enter to exit"
         exit
     }
